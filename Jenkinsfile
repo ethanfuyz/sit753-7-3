@@ -59,9 +59,12 @@ pipeline {
           done
 
           npm ci --include=dev
-          npx prisma generate || true
+          export NODE_ENV=test
+          export JWT_SECRET=testsecret
           export DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@localhost:${PG_PORT_HOST}/${PG_DB}?schema=public"
-          npx prisma migrate deploy
+
+          npx prisma migrate reset --force --skip-seed || npx prisma migrate deploy
+
           npm test -- --ci --runInBand
 
           docker rm -f "$PG_HOST_CONT" || true
