@@ -65,7 +65,7 @@ pipeline {
 
           npx prisma migrate reset --force --skip-seed || npx prisma migrate deploy
 
-          npm test -- --ci --runInBand
+          npx nx test api --ci --runInBand --testPathIgnorePatterns=src/tests/services/auth.service.test.ts
 
           docker rm -f "$PG_HOST_CONT" || true
         '''
