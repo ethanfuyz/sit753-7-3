@@ -29,7 +29,12 @@ pipeline {
     }
     stage('Test') {
       steps {
-        sh 'npm test -- --ci --runInBand'
+        sh '''
+          set -eux
+          
+          npm ci --include=dev
+          npm test -- --ci --runInBand
+        '''
       }
     }
   }
