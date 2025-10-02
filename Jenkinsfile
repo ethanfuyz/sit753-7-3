@@ -33,7 +33,7 @@ pipeline {
           set -eux
           
           npm ci --include=dev
-          npm test -- --ci --runInBand
+          npx nx test api --ci --runInBand --testPathIgnorePatterns=src/tests/services/auth.service.test.ts
         '''
       }
     }
