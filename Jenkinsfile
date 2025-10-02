@@ -1,17 +1,21 @@
 pipeline {
   agent any
 
+  tools { nodejs "NodeJS_24" }
+
   environment {
     PATH       = "/usr/local/bin:${env.PATH}"
 
     IMAGE      = "realworld-api:${env.BUILD_NUMBER}"
-    TEST_IMAGE = "realworld-api-test:${env.BUILD_NUMBER}"
     NET        = "ci-net"
+
     PG_USER    = "postgres"
     PG_PASS    = "postgres"
     PG_DB      = "realworld_test"
     PG_HOST    = "ci-postgres"
     PG_PORT    = "5432"
+
+    DATABASE_URL = "postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}?schema=public"
   }
 
   stages {
@@ -26,19 +30,17 @@ pipeline {
       }
     }
 
-    stage('Build images') {
+    stage('Build') {
       steps {
         checkout scm
         sh '''
           set -eux
-        
-          docker build --target test    -t "$TEST_IMAGE" .
-          docker build --target runtime -t "$IMAGE" .
+          docker build -t "$IMAGE" .
         '''
       }
     }
 
-    stage('Test in containers') {
+    stage('Test') {
       steps {
         sh '''
           set -eux
@@ -56,15 +58,12 @@ pipeline {
             sleep 1
           done
 
-          docker run --rm --network "$NET" \
-            -e DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}?schema=public" \
-            "$TEST_IMAGE" sh -lc '
-              set -eux
-              npx prisma migrate deploy
-              npm test -- --ci --runInBand
-            '
+          npm ci --include=dev
+          npx prisma generate || true
+          npx prisma migrate deploy
+          npm test -- --ci --runInBand
 
-          docker rm -f ci-postgres
+          docker rm -f ci-postgres || true
         '''
       }
     }
