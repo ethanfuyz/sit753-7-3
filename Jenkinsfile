@@ -18,7 +18,6 @@ pipeline {
           npm ci --include=dev
           npx prisma generate
           npx nx build api
-          npm prune --omit=dev
 
           rm -rf "$STAGE_DIR" && mkdir -p "$STAGE_DIR"
           cp -r dist node_modules "$STAGE_DIR"/
