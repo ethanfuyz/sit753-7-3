@@ -29,7 +29,7 @@ pipeline {
     }
     stage('Test') {
       steps {
-        sh 'npm test -- --ci --runInBand --reporters=default --reporters=jest-junit'
+        sh 'npm test -- --ci --runInBand'
       }
     }
   }
