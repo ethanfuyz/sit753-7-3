@@ -2,29 +2,43 @@ pipeline {
   agent any
 
   environment {
-    IMAGE       = "realworld-api:${env.BUILD_NUMBER}"
-    TEST_IMAGE  = "realworld-api-test:${env.BUILD_NUMBER}"
-    NET         = "ci-net"
-    PG_USER     = "postgres"
-    PG_PASS     = "postgres"
-    PG_DB       = "realworld_test"
-    PG_HOST     = "ci-postgres"
-    PG_PORT     = "5432"
+    PATH       = "/usr/local/bin:${env.PATH}"
+
+    IMAGE      = "realworld-api:${env.BUILD_NUMBER}"
+    TEST_IMAGE = "realworld-api-test:${env.BUILD_NUMBER}"
+    NET        = "ci-net"
+    PG_USER    = "postgres"
+    PG_PASS    = "postgres"
+    PG_DB      = "realworld_test"
+    PG_HOST    = "ci-postgres"
+    PG_PORT    = "5432"
   }
 
   stages {
-    stage('Build') {
+    stage('Preflight') {
+      steps {
+        sh '''
+          set -eux
+          whoami
+          which docker
+          docker version
+        '''
+      }
+    }
+
+    stage('Build images') {
       steps {
         checkout scm
         sh '''
           set -eux
+        
           docker build --target test    -t "$TEST_IMAGE" .
           docker build --target runtime -t "$IMAGE" .
         '''
       }
     }
 
-    stage('Test') {
+    stage('Test in containers') {
       steps {
         sh '''
           set -eux
