@@ -14,6 +14,7 @@ pipeline {
         checkout scm
         sh '''
           set -eux
+
           npm ci --include=dev
           npx prisma generate
           npx nx build api
@@ -27,5 +28,15 @@ pipeline {
         '''
       }
     }
+    stage('Test') {
+      steps {
+        sh 'npm test -- --ci --runInBand --reporters=default --reporters=jest-junit'
+      }
+    }
+    stage('Code Quality Analysis') {}
+    stage('Security') {}
+    stage('Deploy') {}
+    stage('Release') {}
+    stage('Monitoring and Alerting') {}
   }
 }
