@@ -47,10 +47,11 @@ pipeline {
 
           docker network create "$NET" || true
           docker rm -f ci-postgres || true
-          docker run -d --name ci-postgres --network "$NET" \
+          docker run -d --name "$PG_HOST_CONT" --network "$NET" \
             -e POSTGRES_USER="$PG_USER" \
             -e POSTGRES_PASSWORD="$PG_PASS" \
             -e POSTGRES_DB="$PG_DB" \
+            -p "$PG_PORT_HOST:$PG_PORT_CONT" \
             postgres:15
 
           for i in $(seq 1 40); do
