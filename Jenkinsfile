@@ -33,10 +33,5 @@ pipeline {
         sh 'npm test -- --ci --runInBand --reporters=default --reporters=jest-junit'
       }
     }
-    stage('Code Quality Analysis') {}
-    stage('Security') {}
-    stage('Deploy') {}
-    stage('Release') {}
-    stage('Monitoring and Alerting') {}
   }
 }
