@@ -14,9 +14,9 @@ pipeline {
         checkout scm
         sh '''
           set -eux
-          npm ci
+          npm ci --include=dev
           npx prisma generate
-          npx nx build api || npm run build
+          npx nx build api
           npm prune --omit=dev
 
           rm -rf "$STAGE_DIR" && mkdir -p "$STAGE_DIR"
