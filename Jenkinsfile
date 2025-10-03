@@ -148,13 +148,14 @@ pipeline {
 
           echo "Releasing application to Production..."
 
-          rm -rf /var/www/realworld-prod && mkdir -p /var/www/realworld-prod
-          tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C /var/www/realworld-prod
+          + rm -rf /Users/ethan/realworld-prod
+          + mkdir -p /Users/ethan/realworld-prod
+          + tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C /Users/ethan/realworld-prod
 
           cd /var/www/realworld-prod/dist/api
 
           export NODE_ENV=production
-          export PORT=8080
+          export PORT=8081
 
           pm2 delete realworld-api-prod || true
           pm2 start main.js --name realworld-api-prod --update-env
