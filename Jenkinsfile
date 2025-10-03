@@ -104,41 +104,5 @@ pipeline {
         }
       }
     }
-
-    stage('Deploy') {
-      tools { nodejs 'NodeJS_24' }
-      steps {
-        withEnv(["PATH+NODE=${tool name: 'NodeJS_24', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin"]) {
-          sh '''
-            set -euxo pipefail
-
-            echo "Deploying application with PM2..."
-
-            rm -rf /tmp/realworld-staging && mkdir -p /tmp/realworld-staging
-            tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C /tmp/realworld-staging
-
-            cd /tmp/realworld-staging/dist/api
-
-            if ! command -v pm2 >/dev/null 2>&1; then
-              npm install -g pm2
-            fi
-
-            export NODE_ENV=staging
-            export PORT=3000
-
-            pm2 delete realworld-api || true
-            pm2 start main.js --name realworld-api --update-env
-
-            for i in $(seq 1 30); do
-              nc -z 127.0.0.1 3000 && echo "✅ App is running on http://localhost:3000" && break
-              sleep 1
-            done
-            nc -z 127.0.0.1 3000 || (echo "❌ App failed to start"; exit 1)
-
-            pm2 save || true
-          '''
-        }
-      }
-    }
-
+  }
 }
