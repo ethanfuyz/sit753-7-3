@@ -59,23 +59,17 @@ pipeline {
       steps {
         sh '''
           set -eux
+
           npm ci --include=dev
-
           echo "Running security scan..."
-          npm audit --json > audit-report.json || true
 
-          CRITICAL=$(jq '.metadata.vulnerabilities.critical' audit-report.json)
-          HIGH=$(jq '.metadata.vulnerabilities.high' audit-report.json)
-          MEDIUM=$(jq '.metadata.vulnerabilities.moderate' audit-report.json)
-          LOW=$(jq '.metadata.vulnerabilities.low' audit-report.json)
-
-          echo "Vulnerabilities found: Critical=$CRITICAL, High=$HIGH, Medium=$MEDIUM, Low=$LOW"
-
-          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          if npm audit --audit-level=high --json > audit-report.json; then
+            node -e "const j=require('./audit-report.json');const v=j.metadata?.vulnerabilities||{};console.log(`Vulnerabilities found: Critical=${v.critical||0}, High=${v.high||0}, Medium=${v.moderate||0}, Low=${v.low||0}`)"
+            echo "✅ No Critical/High vulnerabilities detected."
+          else
+            node -e "const j=require('./audit-report.json');const v=j.metadata?.vulnerabilities||{};console.log(`Vulnerabilities found: Critical=${v.critical||0}, High=${v.high||0}, Medium=${v.moderate||0}, Low=${v.low||0}`)"
             echo "❌ Critical or High vulnerabilities detected. Please fix the dependencies."
             exit 1
-          else
-            echo "✅ No critical vulnerabilities detected."
           fi
         '''
       }
