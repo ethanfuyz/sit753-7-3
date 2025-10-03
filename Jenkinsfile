@@ -140,5 +140,29 @@ pipeline {
         }
       }
     }
+
+    stage('Release') {
+      steps {
+        sh '''
+          set -euxo pipefail
+
+          echo "Releasing application to Production..."
+
+          rm -rf /var/www/realworld-prod && mkdir -p /var/www/realworld-prod
+          tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C /var/www/realworld-prod
+
+          cd /var/www/realworld-prod/dist/api
+
+          export NODE_ENV=production
+          export PORT=8080
+
+          pm2 delete realworld-api-prod || true
+          pm2 start main.js --name realworld-api-prod --update-env
+
+          echo "✅ Production app is running on http://localhost:8081"
+        '''
+      }
+    }
+
   }
 }
