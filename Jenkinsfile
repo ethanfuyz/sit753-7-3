@@ -56,23 +56,32 @@ pipeline {
     }
 
     stage('Security') {
+      tools { nodejs 'NodeJS_24' } 
       steps {
-        sh '''
-          set -eux
+        withEnv(["PATH+NODE=${tool name: 'NodeJS_24', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin"]) {
+          sh '''
+            set -eux
 
-          npm ci --include=dev
-          echo "Running security scan..."
+            echo "Running security scan..."
+            npm audit --json > audit-report.json || true
 
-          if npm audit --audit-level=high --json > audit-report.json; then
-            node -e "const j=require('./audit-report.json');const v=j.metadata?.vulnerabilities||{};console.log(`Vulnerabilities found: Critical=${v.critical||0}, High=${v.high||0}, Medium=${v.moderate||0}, Low=${v.low||0}`)"
-            echo "✅ No Critical/High vulnerabilities detected."
-          else
-            node -e "const j=require('./audit-report.json');const v=j.metadata?.vulnerabilities||{};console.log(`Vulnerabilities found: Critical=${v.critical||0}, High=${v.high||0}, Medium=${v.moderate||0}, Low=${v.low||0}`)"
-            echo "❌ Critical or High vulnerabilities detected. Please fix the dependencies."
-            exit 1
-          fi
-        '''
+            COUNTS=$(node -e "const j=require('./audit-report.json'); const v=(j.metadata&&j.metadata.vulnerabilities)||{}; const out=[v.critical||0, v.high||0, v.moderate||0, v.low||0]; process.stdout.write(out.join(' '))")
+
+            set -- $COUNTS
+            CRITICAL=$1; HIGH=$2; MEDIUM=$3; LOW=$4
+
+            echo "Vulnerabilities found -> Critical=$CRITICAL, High=$HIGH, Medium=$MEDIUM, Low=$LOW"
+
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "❌ Critical or High vulnerabilities detected. Please fix the dependencies."
+              exit 1
+            else
+              echo "✅ No critical or high vulnerabilities detected."
+            fi
+          '''
+        }
       }
     }
+
   }
 }
