@@ -2,6 +2,10 @@ pipeline {
   agent any
   tools { nodejs "NodeJS_24" }
 
+  environment {
+    MAIL_TO = "ethanfuyz@gmail.com"
+  }
+
   stages {
     stage('Build') {
       environment {
@@ -157,6 +161,36 @@ pipeline {
           nc -z 127.0.0.1 4000 || (echo "❌ Prod failed to start"; exit 1)
         '''
       }
+    }
+
+    stage('Monitoring and Alerting') {
+      steps {
+        echo 'Monitoring enabled: the system will email on any stage failure.'
+      }
+    }
+  }
+
+  post {
+    failure {
+      emailext(
+        to: "${env.MAIL_TO}",
+        subject: "Pipeline FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """The pipeline failed.
+Job: ${env.JOB_NAME}
+Build: ${env.BUILD_NUMBER}
+URL: ${env.BUILD_URL}""",
+        attachLog: true
+      )
+    }
+    success {
+      emailext(
+        to: "${env.MAIL_TO}",
+        subject: "Pipeline PASSED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """The pipeline passed successfully.
+Job: ${env.JOB_NAME}
+Build: ${env.BUILD_NUMBER}
+URL: ${env.BUILD_URL}"""
+      )
     }
   }
 }
