@@ -27,6 +27,7 @@ pipeline {
         '''
       }
     }
+
     stage('Test') {
       steps {
         sh '''
@@ -37,6 +38,7 @@ pipeline {
         '''
       }
     }
+
     stage('Quality') {
       environment {
         SCANNER_HOME = tool 'SonarScanner'   
@@ -50,6 +52,32 @@ pipeline {
             "$SCANNER_HOME/bin/sonar-scanner"
           '''
         }
+      }
+    }
+
+    stage('Security') {
+      steps {
+        sh '''
+          set -eux
+          npm ci --include=dev
+
+          echo "Running security scan..."
+          npm audit --json > audit-report.json || true
+
+          CRITICAL=$(jq '.metadata.vulnerabilities.critical' audit-report.json)
+          HIGH=$(jq '.metadata.vulnerabilities.high' audit-report.json)
+          MEDIUM=$(jq '.metadata.vulnerabilities.moderate' audit-report.json)
+          LOW=$(jq '.metadata.vulnerabilities.low' audit-report.json)
+
+          echo "Vulnerabilities found: Critical=$CRITICAL, High=$HIGH, Medium=$MEDIUM, Low=$LOW"
+
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "❌ Critical or High vulnerabilities detected. Please fix the dependencies."
+            exit 1
+          else
+            echo "✅ No critical vulnerabilities detected."
+          fi
+        '''
       }
     }
   }
