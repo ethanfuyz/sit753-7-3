@@ -142,28 +142,42 @@ pipeline {
     }
 
     stage('Release') {
+      tools { nodejs 'NodeJS_24' }
       steps {
-        sh '''
-          set -euxo pipefail
+        withEnv(["PATH+NODE=${tool name: 'NodeJS_24', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin"]) {
+          sh '''
+            set -euxo pipefail
 
-          echo "Releasing application to Production..."
+            echo "Releasing application to Production..."
 
-          + rm -rf /Users/ethan/realworld-prod
-          + mkdir -p /Users/ethan/realworld-prod
-          + tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C /Users/ethan/realworld-prod
+            APP_DIR="/Users/ethan/realworld-prod"
+            PORT=4000
 
-          cd /var/www/realworld-prod/dist/api
+            rm -rf -- "$APP_DIR"
+            mkdir -p "$APP_DIR"
+            tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C "$APP_DIR"
 
-          export NODE_ENV=production
-          export PORT=8081
+            cd "$APP_DIR/dist/api"
 
-          pm2 delete realworld-api-prod || true
-          pm2 start main.js --name realworld-api-prod --update-env
+            if ! command -v pm2 >/dev/null 2>&1; then
+              npm install -g pm2
+            fi
 
-          echo "✅ Production app is running on http://localhost:8081"
-        '''
+            export NODE_ENV=production
+            export PORT=$PORT
+
+            pm2 delete realworld-api-prod || true
+            pm2 start main.js --name realworld-api-prod --update-env
+            pm2 save || true
+
+            for i in $(seq 1 30); do
+              nc -z 127.0.0.1 $PORT && echo "✅ Prod is running on http://localhost:$PORT" && break
+              sleep 1
+            done
+            nc -z 127.0.0.1 $PORT || (echo "❌ Prod failed to start"; exit 1)
+          '''
+        }
       }
     }
-
   }
 }
