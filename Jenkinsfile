@@ -37,5 +37,21 @@ pipeline {
         '''
       }
     }
+    stage('Quality') {
+      environment {
+        SCANNER_HOME = tool 'SonarScanner'   
+      }
+      steps {
+        withSonarQubeEnv('MySonar') {        
+          sh '''
+            set -eux
+            npm ci --include=dev
+
+            "$SCANNER_HOME/bin/sonar-scanner"
+          '''
+        }
+      }
+    }
+
   }
 }
