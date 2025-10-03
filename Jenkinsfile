@@ -2,14 +2,14 @@ pipeline {
   agent any
   tools { nodejs "NodeJS_24" }
 
-  environment {
-    ARTIFACT   = "realworld-api-${env.BUILD_NUMBER}.tar.gz"
-    STAGE_DIR  = "build_staging"
-    NODE_ENV   = "production"
-  }
-
   stages {
     stage('Build') {
+      environment {
+        ARTIFACT   = "realworld-api-${env.BUILD_NUMBER}.tar.gz"
+        STAGE_DIR  = "build_staging"
+        NODE_ENV   = "production"
+      }
+
       steps {
         checkout scm
         sh '''
@@ -21,7 +21,6 @@ pipeline {
 
           rm -rf "$STAGE_DIR" && mkdir -p "$STAGE_DIR"
           cp -r dist node_modules "$STAGE_DIR"/
-          [ -d prisma ] && cp -r prisma "$STAGE_DIR"/ || true
           cp package*.json "$STAGE_DIR"/
           tar -czf "$ARTIFACT" -C "$STAGE_DIR" .
         '''
