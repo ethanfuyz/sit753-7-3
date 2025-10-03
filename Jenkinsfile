@@ -114,10 +114,6 @@ pipeline {
 
           cd /tmp/realworld-staging/dist/api
 
-          if ! command -v pm2 >/dev/null 2>&1; then
-            npm install -g pm2
-          fi
-
           export NODE_ENV=staging
           export PORT=3000
 
@@ -129,48 +125,37 @@ pipeline {
             sleep 1
           done
           nc -z 127.0.0.1 3000 || (echo "❌ App failed to start"; exit 1)
-
-          pm2 save || true
         '''
       }
     }
 
     stage('Release') {
-      tools { nodejs 'NodeJS_24' }
       steps {
-        withEnv(["PATH+NODE=${tool name: 'NodeJS_24', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin"]) {
           sh '''
-            set -euxo pipefail
+          set -euxo pipefail
 
-            echo "Releasing application to Production..."
+          echo "Releasing application to Production..."
 
-            APP_DIR="/Users/ethan/Desktop/Applied_AI/SIT753/7_3HD/realworld-prod"
-            PORT=4000
+          APP_DIR="/Users/ethan/Desktop/Applied_AI/SIT753/7_3HD/realworld-prod"
 
-            rm -rf -- "$APP_DIR"
-            mkdir -p "$APP_DIR"
-            tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C "$APP_DIR"
+          rm -rf -- "$APP_DIR"
+          mkdir -p "$APP_DIR"
+          tar -xzf realworld-api-${BUILD_NUMBER}.tar.gz -C "$APP_DIR"
 
-            cd "$APP_DIR/dist/api"
+          cd "$APP_DIR/dist/api"
 
-            if ! command -v pm2 >/dev/null 2>&1; then
-              npm install -g pm2
-            fi
+          export NODE_ENV=production
+          export PORT=4000
 
-            export NODE_ENV=production
-            export PORT=$PORT
+          pm2 delete realworld-api-prod || true
+          pm2 start main.js --name realworld-api-prod --update-env
 
-            pm2 delete realworld-api-prod || true
-            pm2 start main.js --name realworld-api-prod --update-env
-            pm2 save || true
-
-            for i in $(seq 1 30); do
-              nc -z 127.0.0.1 $PORT && echo "✅ Prod is running on http://localhost:$PORT" && break
-              sleep 1
-            done
-            nc -z 127.0.0.1 $PORT || (echo "❌ Prod failed to start"; exit 1)
-          '''
-        }
+          for i in $(seq 1 30); do
+            nc -z 127.0.0.1 4000 && echo "✅ Prod is running on http://localhost:4000" && break
+            sleep 1
+          done
+          nc -z 127.0.0.1 4000 || (echo "❌ Prod failed to start"; exit 1)
+        '''
       }
     }
   }
