@@ -150,7 +150,7 @@ pipeline {
 
             echo "Releasing application to Production..."
 
-            APP_DIR="/Users/ethan/realworld-prod"
+            APP_DIR="/Users/ethan/Desktop/Applied_AI/SIT753/7_3HD/realworld-prod"
             PORT=4000
 
             rm -rf -- "$APP_DIR"
